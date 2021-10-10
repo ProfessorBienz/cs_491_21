@@ -1,4 +1,5 @@
 #include "mpi.h"
+#include <stdlib.h>
 #include <vector>
 #include <numeric>
 
@@ -36,8 +37,12 @@ int main(int argc, char* argv[])
     std::iota(x.begin(), x.end(), my_id*n);
     std::iota(y.begin(), y.end(), my_id*n);
 
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t0 = MPI_Wtime();
     int global_sum = inner_product(n, x, y);
-    if (my_id == 0) printf("Inner Product : %d\n", global_sum);
+    double tfinal = MPI_Wtime() - t0;
+    MPI_Allreduce(&tfinal, &t0, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (my_id == 0) printf("Inner Product Time : %e\n", t0);
 
     MPI_Finalize();
     return 0;
