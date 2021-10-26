@@ -1,4 +1,5 @@
 #include "mpi.h"
+#include <stdlib.h>
 #include <vector>
 #include <numeric>
 #include <cmath>
@@ -78,19 +79,14 @@ int main(int argc, char* argv[])
     MPI_Comm_split(MPI_COMM_WORLD, p_y, my_id, &row_comm);
     MPI_Comm_split(MPI_COMM_WORLD, p_x, my_id, &col_comm);
 
-    int* y_global = new int[N];
-
+    MPI_Barrier(MPI_COMM_WORLD);
+    double t0 = MPI_Wtime();
     int* y = matvec0(n, p_x, p_y, row_comm, col_comm, A, x);
-
-    MPI_Allgather(y, n, MPI_INT, y_global, n, MPI_INT, col_comm);
-    if (my_id == 0)
-    {
-        for (int i = 0; i < N; i++)
-            printf("y[%d] = %d\n", i, y_global[i]);
-    }
+    double tfinal = MPI_Wtime() - t0;
+    MPI_Allreduce(&tfinal, &t0, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (my_id == 0) printf("2D Matvec Time : %e\n", t0);
 
     delete[] y;
-    delete[] y_global;
 
     MPI_Finalize();
     return 0;
